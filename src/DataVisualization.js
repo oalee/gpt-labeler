@@ -1,7 +1,10 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import socketIOClient from 'socket.io-client';
 import './DataVisualization.css'; // Import the CSS file
 import socket from './socket';
+import debounce from 'lodash/debounce';
+import { filter } from 'lodash';
+
 
 const DataVisualization = () => {
     // Parse the JSON data
@@ -9,8 +12,16 @@ const DataVisualization = () => {
 
     const socketRef = useRef(null);
     const [jsonData, setJsonData] = useState({});
+    const [collapsedItems, setCollapsedItems] = useState({});
+    const [manualInstruction, setManualInstruction] = useState('');
+    const [manualCorrection, setManualCorrection] = useState('');
+    const manualInstructionRef = useRef({});
+    const manualCorrectionRef = useRef({});
 
+    // use effect to set to false initially
     useEffect(() => {
+
+
         let isMounted = true;
         // Connect to the server
         if (!socketRef.current) {
@@ -37,15 +48,7 @@ const DataVisualization = () => {
             };
         }
     }, []);
-    // useEffect(() => {
-    //     if (socketRef.current && Object.keys(jsonData).length > 0) {
-    //         console.log('sending js', socketRef.current, Object.keys(jsonData).length);
-    //         // Send the custom message event
-    //         socket.emit('customMessage', 'message');
-    //         // Save history to the server
-    //         socket.emit('saveHistory', jsonData);
-    //     }
-    // }, [jsonData]);
+
 
     const startTask = () => {
         socketRef.current.emit('startTask');
@@ -60,9 +63,7 @@ const DataVisualization = () => {
     };
     // State to track the collapsed state of user data
 
-    const [collapsedItems, setCollapsedItems] = useState({});
 
-    // use effect to set to false initially
     useEffect(() => {
         const initialCollapsedItems = {};
         Object.keys(jsonData).forEach((tweetId) => {
@@ -119,6 +120,38 @@ const DataVisualization = () => {
 
     };
 
+
+
+    const handleResendInstruction = () => {
+        // Resend instruction logic
+    };
+
+    const sendManualCorrection = () => {
+        // Send manual correction logic
+    };
+
+    const sendManualInstruction = (tweetId) => {
+        // Send manual correction logic
+
+        let msg = {
+            tweetId: tweetId,
+            manualInstruction: manualInstructionRef[tweetId],
+        }
+
+        console.log('sendManualInstruction', msg);
+
+        socketRef.current.emit('sendManualInstruction', {
+            ...msg
+        });
+
+    };
+
+    const handleChange = debounce((value) => {
+        setManualInstruction(value);
+    }, 400);
+
+
+
     return (
         <div className="container">
             <div>
@@ -129,6 +162,9 @@ const DataVisualization = () => {
                     const tweetText = tweet.item.rawContent;
                     const isCollapsed = collapsedItems[tweetId];
                     const isValidated = tweet.isValidated || false;
+
+                    // last Item response from assistant
+                    const lastItem = filter(history, { role: 'assistant' }).pop();
 
                     return (
                         <div className="card" key={tweetId}>
@@ -146,7 +182,7 @@ const DataVisualization = () => {
                                 <h2>Tweet ID: {tweetId}</h2>
                                 <h3> {tweetText}</h3>
                             </div>
-                            <div className={`card-body ${isCollapsed ? 'collapsed' : ''}`} style={{ display: isCollapsed ? 'none' : 'flex' , justifyContent:"center"}}>
+                            <div className={`card-body ${isCollapsed ? 'collapsed' : ''}`} style={{ display: isCollapsed ? 'none' : 'flex', justifyContent: "center" }}>
                                 {history.map((item, index) => (
                                     <div className={`item ${isValidated ? 'validated' : ''}`} key={index}>
                                         <h3>Role: {item.role}</h3>
@@ -159,8 +195,34 @@ const DataVisualization = () => {
                                         )}
                                     </div>
                                 ))}
+                                <button onClick={handleResendInstruction}>Resend Instruction</button>
 
+                                <div>
+                                    <textarea
+                                        type="text"
+                                        placeholder="Manual Instruction"
+                                        style={{ height: '100px' }}
+                                        onChange={(e) => (manualInstructionRef[tweetId] = e.target.value)}
+                                    />
+                                    <button onClick={
+                                        () => {
+                                            sendManualInstruction(tweetId)
+                                        }
+                                    }>Manual Instruction</button>
+                                </div>
+
+                                <div>
+
+                                    <textarea
+                                        type="text"
+                                        defaultValue={JSON.stringify(lastItem.parsedOutput, null, 2)}
+                                        placeholder="Manual Correction"
+
+                                    />
+                                    <button onClick={sendManualCorrection}>Manual Correction</button>
+                                </div>
                             </div>
+
                         </div>
                     );
                 })}

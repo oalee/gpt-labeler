@@ -5,29 +5,29 @@
     flex-direction: column;
     width: 100vh;
     position: relative;
-  }
-  
-  .card {
+}
+
+.card {
     /* width: 70%; */
     border: 6px solid #ccc;
     border-radius: 4px;
     margin-bottom: 10px;
     overflow: hidden;
-    
-  }
-  
-  .card-header {
+
+}
+
+.card-header {
     padding: 10px;
     background-color: #270a0a;
     cursor: pointer;
     font-size: small;
-  }
-  
-  .card-header:hover {
+}
+
+.card-header:hover {
     background-color: #c5a7a7;
-  }
-  
-  .card-body {
+}
+
+.card-body {
     padding: 10px;
     display: none;
     font-size: 20px;
@@ -36,26 +36,31 @@
     align-items: center;
     flex-direction: column;
     align-self: center;
-  }
-  
-  .collapsed .card-body {
+}
+
+.collapsed .card-body {
     display: block;
-  }
-  
-  .card-body p {
+}
+
+.card-body p {
     font-size: 20px;
     margin-bottom: 5px;
-  }
-  
+}
+
+.card-body textarea {
+    width: 98vh;
+    height: 100vh;
+    margin: 2vh;
+}
+
 .validation-checkbox {
     display: flex;
     align-items: center;
     justify-content: flex-end;
     margin-top: 10px;
     font-size: large;
-  }
-  
-  .validation-checkbox input[type="checkbox"] {
+}
+
+.validation-checkbox input[type="checkbox"] {
     margin-right: 5px;
-  }
-  
+}
