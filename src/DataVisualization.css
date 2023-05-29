@@ -30,8 +30,8 @@
   .card-body {
     padding: 10px;
     display: none;
-    font-size: 16px;
-    width: 90vh;
+    font-size: 20px;
+    width: 100vh;
     justify-content: center;
     align-items: center;
     flex-direction: column;
@@ -43,7 +43,7 @@
   }
   
   .card-body p {
-    font-size: 12px;
+    font-size: 20px;
     margin-bottom: 5px;
   }
   
