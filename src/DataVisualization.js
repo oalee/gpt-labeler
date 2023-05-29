@@ -18,6 +18,15 @@ const DataVisualization = () => {
     const manualInstructionRef = useRef({});
     const manualCorrectionRef = useRef({});
 
+    const [serverStatus, setServerStatus] = useState({
+        status: 'disconnected',
+        isTaskRunning: false,
+        promptQueueLength: 0,
+        rateLimitError: false,
+        error: null,
+        rateLimitTime: 0,
+    });
+
     // use effect to set to false initially
     useEffect(() => {
 
@@ -36,6 +45,13 @@ const DataVisualization = () => {
             socketRef.current.on('history', (data) => {
                 console.log('history', data);
                 setJsonData(data);
+            });
+
+            socketRef.current.on('serverStatus', (data) => {
+                console.log('serverStatus', data);
+                // data is missing status, add it
+                data.status = 'connected';
+                setServerStatus(data);
             });
 
             // Clean up the socket connection on component unmount
@@ -65,9 +81,9 @@ const DataVisualization = () => {
 
 
     useEffect(() => {
-        const initialCollapsedItems = {};
+        const initialCollapsedItems = collapsedItems;
         Object.keys(jsonData).forEach((tweetId) => {
-            initialCollapsedItems[tweetId] = true;
+            initialCollapsedItems[tweetId] = initialCollapsedItems[tweetId] | true;
         });
         setCollapsedItems(initialCollapsedItems);
     }, [jsonData]);
@@ -96,15 +112,15 @@ const DataVisualization = () => {
 
 
     // use effect to check data, ignore initial render
-    useEffect(() => {
-        if (Object.keys(jsonData).length > 0) {
-            console.log('sending js', socketRef.current, Object.keys(jsonData).length);
-            // Send the custom message event
+    // useEffect(() => {
+    //     if (Object.keys(jsonData).length > 0) {
+    //         console.log('sending js', socketRef.current, Object.keys(jsonData).length);
+    //         // Send the custom message event
 
-            // Save history to the server
-            socketRef.current.emit('saveHistory', jsonData);
-        }
-    }, [jsonData]);
+    //         // Save history to the server
+    //         socketRef.current.emit('saveHistory', jsonData);
+    //     }
+    // }, [jsonData]);
 
     const handleToggle = (tweetId) => {
         console.log('tweetId', tweetId);
@@ -154,8 +170,31 @@ const DataVisualization = () => {
 
     return (
         <div className="container">
+            <div className="overlay">
+                <div className="server-status">
+                    {/* <h3>Server Status:</h3> */}
+                    <p>Status: {serverStatus.status}</p>
+                    <p>Is Task Running: {serverStatus.isTaskRunning.toString()}</p>
+                    <p>Prompt Queue Length: {serverStatus.promptQueueLength}</p>
+                    <p>Rate Limit Error: {serverStatus.rateLimitError.toString()}</p>
+                    <p>Error: {JSON.stringify(serverStatus.error)}</p>
+                    <p>Rate Limit Time: {serverStatus.rateLimitTime}</p>
+                </div>
+            </div>
             <div>
                 <h1>Tweet Analysis</h1>
+                <div className="button-group">
+                    <button disabled={serverStatus.isTaskRunning} onClick={
+                        () => {
+                            socketRef.current.emit('startTask')
+                        }
+                    }>Start Task</button>
+                    <button onClick={
+                        () => {
+                            socketRef.current.emit('addSampleQueue')
+                        }
+                    }>Add Sample Queue</button>
+                </div>
                 {Object.keys(jsonData).map((tweetId) => {
                     const tweet = jsonData[tweetId];
                     const history = tweet.history;
