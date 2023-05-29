@@ -19,7 +19,15 @@ const DataVisualization = () => {
       setCollapsedItems(initialCollapsedItems);
     }, [jsonData]);
 
-
+    const handleValidation = (tweetId) => {
+        setJsonData((prevState) => ({
+          ...prevState,
+          [tweetId]: {
+            ...prevState[tweetId],
+            isValidated: !prevState[tweetId].isValidated,
+          },
+        }));
+      };
     const handleToggle = (tweetId) => {
         console.log('tweetId', tweetId);
       setCollapsedItems((prevState) => ({
@@ -40,26 +48,38 @@ const DataVisualization = () => {
             const isValidated = tweet.isValidated || false;
 
             return (
-              <div className="card" key={tweetId}>
-                <div className="card-header" onClick={() => handleToggle(tweetId)}>
-                  <h2>Tweet ID: {tweetId}</h2>
-                  <h3>{tweetText}</h3>
-                </div>
-                <div className={`card-body ${isCollapsed ? 'collapsed' : ''}`} style={{ display: isCollapsed ? 'none' : 'block' }}>                  {history.map((item, index) => (
-                    <div className="item" key={index}>
-                      <h3>Role: {item.role}</h3>
-                      {item.role === 'user' && <p>User Data: {item.data}</p>}
-                      {item.role === 'assistant' && (
-                        <div>
-                          <p>Parsed Output:</p>
-                          <pre>{JSON.stringify(item.parsedOutput, null, 2)}</pre>
-                        </div>
-                      )}
+                <div className="card" key={tweetId}>
+                  <div className="card-header" onClick={() => handleToggle(tweetId)}>
+                  <div className="validation-checkbox">
+                      <label>
+                        <input
+                          type="checkbox"
+                          checked={isValidated}
+                          onChange={() => handleValidation(tweetId)}
+                        />
+                        Validated
+                      </label>
                     </div>
-                  ))}
+                    <h2>Tweet ID: {tweetId}</h2>
+                    <h3> {tweetText}</h3>
+                  </div>
+                  <div className={`card-body ${isCollapsed ? 'collapsed' : ''}`} style={{ display: isCollapsed ? 'none' : 'block' }}>
+                    {history.map((item, index) => (
+                      <div className={`item ${isValidated ? 'validated' : ''}`} key={index}>
+                        <h3>Role: {item.role}</h3>
+                        {item.role === 'user' && <p>User Data: {item.data}</p>}
+                        {item.role === 'assistant' && (
+                          <div>
+                            <p>Parsed Output:</p>
+                            <p>{JSON.stringify(item.parsedOutput, null, 2)}</p>
+                          </div>
+                        )}
+                      </div>
+                    ))}
+
+                  </div>
                 </div>
-              </div>
-            );
+              );
           })}
         </div>
       </div>

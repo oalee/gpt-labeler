@@ -4,6 +4,7 @@
     align-items: center;
     flex-direction: column;
     width: 100vh;
+    position: relative;
   }
   
   .card {
@@ -12,6 +13,7 @@
     border-radius: 4px;
     margin-bottom: 10px;
     overflow: hidden;
+    
   }
   
   .card-header {
@@ -22,14 +24,18 @@
   }
   
   .card-header:hover {
-    background-color: #e0e0e0;
+    background-color: #c5a7a7;
   }
   
   .card-body {
     padding: 10px;
     display: none;
-     font-size: 16px;
-    width: 50px;
+    font-size: 16px;
+    width: 90vh;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+    align-self: center;
   }
   
   .collapsed .card-body {
@@ -39,5 +45,17 @@
   .card-body p {
     font-size: 12px;
     margin-bottom: 5px;
+  }
+  
+.validation-checkbox {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    margin-top: 10px;
+    font-size: large;
+  }
+  
+  .validation-checkbox input[type="checkbox"] {
+    margin-right: 5px;
   }
   
