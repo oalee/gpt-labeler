@@ -22,6 +22,7 @@ const DataVisualization = () => {
     const indexOfLastItem = currentPage * itemsPerPage;
     const indexOfFirstItem = indexOfLastItem - itemsPerPage;
     const currentItems = Object.keys(jsonData).slice(indexOfFirstItem, indexOfLastItem);
+    const [addedSampleQueue, setAddedSampleQueue] = useState(false);
 
     const [serverStatus, setServerStatus] = useState({
         status: 'disconnected',
@@ -30,6 +31,7 @@ const DataVisualization = () => {
         rateLimitError: false,
         error: null,
         rateLimitTime: 0,
+        currentState: 'idle'
     });
 
     // use effect to set to false initially
@@ -59,6 +61,12 @@ const DataVisualization = () => {
                 setServerStatus(data);
             });
 
+            socketRef.current.on('addedSampleQueue', (data) => {
+                console.log('addedSampleQueue', data);
+                // should be true
+                setAddedSampleQueue(data);
+            });
+
             // Clean up the socket connection on component unmount
             return () => {
                 isMounted = false;
@@ -85,13 +93,14 @@ const DataVisualization = () => {
     // State to track the collapsed state of user data
 
 
-    useEffect(() => {
-        const initialCollapsedItems = collapsedItems;
-        Object.keys(jsonData).forEach((tweetId) => {
-            initialCollapsedItems[tweetId] = initialCollapsedItems[tweetId] | true;
-        });
-        setCollapsedItems(initialCollapsedItems);
-    }, [jsonData]);
+    // useEffect(() => {
+    //     const initialCollapsedItems = collapsedItems;
+    //     Object.keys(jsonData).forEach((tweetId) => {
+    //         initialCollapsedItems[tweetId] = initialCollapsedItems[tweetId] | true;
+    //     });
+    //     setCollapsedItems(initialCollapsedItems);
+    // }, [jsonData]);
+
 
 
     const handleValidation = (tweetId) => {
@@ -132,11 +141,17 @@ const DataVisualization = () => {
 
 
         // send message to server
+        let prevCollapsed = collapsedItems[tweetId]
+        // if it's undefined, set to false
+        if (prevCollapsed === undefined) {
+            prevCollapsed = true;
+        }
+        // console.log('prevCollapsed', prevCollapsed, !prevCollapsed);
 
 
         setCollapsedItems((prevState) => ({
             ...prevState,
-            [tweetId]: !prevState[tweetId],
+            [tweetId]: !prevCollapsed,
         }));
 
     };
@@ -184,36 +199,45 @@ const DataVisualization = () => {
                     <p>Rate Limit Error: {serverStatus.rateLimitError.toString()}</p>
                     <p>Error: {JSON.stringify(serverStatus.error)}</p>
                     <p>Rate Limit Time: {serverStatus.rateLimitTime}</p>
+                    <p>Current State: {serverStatus.currentState}</p>
                 </div>
             </div>
             <div>
-            <div className="pagination">
-                <button disabled={currentPage === 1} onClick={() => setCurrentPage(currentPage - 1)}>
-                    Previous
-                </button>
-                <span>{currentPage}</span> / <span>{totalPages}</span>
-                <button disabled={currentPage === totalPages} onClick={() => setCurrentPage(currentPage + 1)}>
-                    Next
-                </button>
-            </div>
-                <h1>Label Analysis</h1>
-                <div className="button-group">
+                <div className="buttonGroup">
+                    <button disabled={currentPage === 1} onClick={() => setCurrentPage(currentPage - 1)}>
+                        Previous
+                    </button>
+                    <span>{currentPage}</span> / <span>{totalPages}</span>
+                    <button disabled={currentPage === totalPages} onClick={() => setCurrentPage(currentPage + 1)}>
+                        Next
+                    </button>
+                </div>
+                {/* <h1>Label Analysis</h1> */}
+                <div className="buttonGroup">
                     <button disabled={serverStatus.isTaskRunning} onClick={
                         () => {
                             socketRef.current.emit('startTask')
                         }
                     }>Start Task</button>
-                    <button onClick={
+                    <button disabled={addedSampleQueue} onClick={
                         () => {
                             socketRef.current.emit('addSampleQueue')
                         }
                     }>Add Sample Queue</button>
+                    <button disabled={!serverStatus.isTaskRunning} onClick={
+                        () => {
+                            socketRef.current.emit('stopTask')
+                        }
+                    }>Stop Task</button>
                 </div>
                 {currentItems.map((tweetId) => {
                     const tweet = jsonData[tweetId];
                     const history = tweet.history;
                     const tweetText = tweet.item.rawContent;
-                    const isCollapsed = collapsedItems[tweetId];
+                    // default to true if not set
+                    var isCollapsed = collapsedItems[tweetId]
+                    isCollapsed = isCollapsed === undefined ? true : isCollapsed;
+                    // console.log('isCollapsed', isCollapsed, collapsedItems[tweetId], collapsedItems, tweetId);
                     const isValidated = tweet.isValidated || false;
 
                     // last Item response from assistant
@@ -248,23 +272,23 @@ const DataVisualization = () => {
                                         )}
                                     </div>
                                 ))}
-                                <button onClick={handleResendInstruction}>Resend Instruction</button>
+                                {/* <button onClick={handleResendInstruction}>Resend Instruction</button> */}
 
-                                <div>
+                                <div className='buttonGroup'>
                                     <textarea
                                         type="text"
                                         placeholder="Manual Instruction"
                                         style={{ height: '100px' }}
                                         onChange={(e) => (manualInstructionRef[tweetId] = e.target.value)}
                                     />
-                                    <button onClick={
+                                    <button  onClick={
                                         () => {
                                             sendManualInstruction(tweetId)
                                         }
-                                    }>Manual Instruction</button>
+                                    }>Send Manual Instruction</button>
                                 </div>
 
-                                <div>
+                                <div className='buttonGroup'>
 
                                     <textarea
                                         type="text"
@@ -272,7 +296,7 @@ const DataVisualization = () => {
                                         placeholder="Manual Correction"
 
                                     />
-                                    <button onClick={sendManualCorrection}>Manual Correction</button>
+                                    <button onClick={sendManualCorrection}>Send Manual Correction</button>
                                 </div>
                             </div>
 
@@ -280,7 +304,7 @@ const DataVisualization = () => {
                     );
                 })}
             </div>
-        
+
         </div>
     );
 };

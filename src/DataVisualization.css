@@ -73,16 +73,44 @@
     height: 100%;
     background-color: rgba(0, 0, 0, 0.116);
     z-index: 0;
-    pointer-events: none; 
-  }
-  
-  .server-status {
+    pointer-events: none;
+}
+
+.server-status {
     display: flex;
- 
+
     background-color: rgba(0, 0, 0, 0.387);
     padding: 20px;
     border-radius: 5px;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
     text-align: center;
-  }
-  
+}
+
+.server-status p {
+    margin: 5px;
+    font-size: 20px;
+    color: #fff;
+}
+
+.buttonGroup button {
+    background-color: #4CAF50;
+    border: none;
+    color: white;
+    padding: 10px 20px;
+    margin: 20px;
+    text-align: center;
+    text-decoration: none;
+    display: inline-block;
+    font-size: 16px;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+.buttonGroup button:hover {
+    background-color: #45a049;
+}
+
+.buttonGroup button:disabled {
+    background-color: #cccccc;
+    cursor: not-allowed;
+}
