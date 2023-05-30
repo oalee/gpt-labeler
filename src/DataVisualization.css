@@ -23,6 +23,14 @@
     font-size: small;
 }
 
+.card-header-validated{
+    padding: 10px;
+    background-color: #086419;
+    cursor: pointer;
+    font-size: small;
+    color: #fff;
+}
+
 .card-header:hover {
     background-color: #c5a7a7;
 }
@@ -37,6 +45,17 @@
     flex-direction: column;
     align-self: center;
 }
+
+.item-validated{
+    font-size: 20px;
+    width: 100vh;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+    align-self: center;
+    background-color: #086419;
+    color: #fff;
+} 
 
 .collapsed .card-body {
     display: block;

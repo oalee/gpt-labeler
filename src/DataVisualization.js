@@ -3,7 +3,7 @@ import socketIOClient from 'socket.io-client';
 import './DataVisualization.css'; // Import the CSS file
 import socket from './socket';
 import debounce from 'lodash/debounce';
-import { filter } from 'lodash';
+import { filter, last } from 'lodash';
 
 
 const DataVisualization = () => {
@@ -14,7 +14,7 @@ const DataVisualization = () => {
     const [jsonData, setJsonData] = useState({});
     const [collapsedItems, setCollapsedItems] = useState({});
     const [manualInstruction, setManualInstruction] = useState('');
-    const [manualCorrection, setManualCorrection] = useState('');
+    const [manualCorrectionValues, setManualCorrectionValues] = useState({});
     const manualInstructionRef = useRef({});
     const manualCorrectionRef = useRef({});
     const [currentPage, setCurrentPage] = useState(1);
@@ -103,38 +103,60 @@ const DataVisualization = () => {
 
 
 
-    const handleValidation = (tweetId) => {
-        setJsonData((prevState) => ({
-            ...prevState,
-            [tweetId]: {
-                ...prevState[tweetId],
-                isValidated: !prevState[tweetId].isValidated,
-            },
-        }));
-        let value = !jsonData[tweetId].isValidated;
+    const handleValidation = (tweetId, historyItem) => {
+        let prevHistory = jsonData[tweetId].history;
+        // set historyItem (same id) to handle change validation (defualt is false and null)
+        // prevHistory
+        jsonData[tweetId].history = prevHistory.map((item) => {
+            if (item.id === historyItem.id) {
+                // default null
+                if (item.isValidated === null) {
+                    item.isValidated = true;
+                } else {
+                    item.isValidated = !item.isValidated;
+                }
+            }
+            return item;
+        });;
+        setJsonData({ ...jsonData });
+
         // // new history
         // let hst = jsonData
         // hst[tweetId].isValidated = value;
 
         socketRef.current.emit('customMessage', {
             message: 'validated',
-            value: value,
+
             tweetId: tweetId,
+            historyItem: historyItem,
         });
 
     };
 
 
-    // use effect to check data, ignore initial render
-    // useEffect(() => {
-    //     if (Object.keys(jsonData).length > 0) {
-    //         console.log('sending js', socketRef.current, Object.keys(jsonData).length);
-    //         // Send the custom message event
+    const handleSelection = (tweetId, historyItem) => {
+        let prevHistory = jsonData[tweetId].history;
 
-    //         // Save history to the server
-    //         socketRef.current.emit('saveHistory', jsonData);
-    //     }
-    // }, [jsonData]);
+        // set historyItem (same id) to handle change validation (defualt is false and null)
+        // prevHistory
+        jsonData[tweetId].history = prevHistory.map((item) => {
+            if (item.id === historyItem.id) {
+                // default null
+                if (item.isSelected === null) {
+                    item.isSelected = true;
+                } else {
+                    item.isSelected = !item.isSelected;
+                }
+            } else {
+                item.isSelected = false;
+            }
+            return item;
+        });;
+
+        manualCorrectionRef[tweetId].value = JSON.stringify(historyItem.parsedOutput, null, 2);
+        setJsonData({ ...jsonData });
+    };
+
 
     const handleToggle = (tweetId) => {
         console.log('tweetId', tweetId);
@@ -158,9 +180,7 @@ const DataVisualization = () => {
 
 
 
-    const handleResendInstruction = () => {
-        // Resend instruction logic
-    };
+
 
     const sendManualCorrection = () => {
         // Send manual correction logic
@@ -202,12 +222,12 @@ const DataVisualization = () => {
                     <p>Current State: {serverStatus.currentState}</p>
                 </div>
             </div>
-            <h1 style={{margin: 10}}> Data Labler</h1>
-            <p style={{margin: 10}} > Total :  {Object.keys(jsonData).length}</p>
+            <h1 style={{ margin: 10 }}> Data Labler</h1>
+            <p style={{ margin: 10 }} > Total :  {Object.keys(jsonData).length}</p>
             <div>
                 <div className="buttonGroup">
                     {/* back 10 */}
-                    <button style={{margin:0}} disabled={currentPage < 11} onClick={() => setCurrentPage(currentPage - 10)}>
+                    <button style={{ margin: 0 }} disabled={currentPage < 11} onClick={() => setCurrentPage(currentPage - 10)}>
                         - 10
                     </button>
                     <button disabled={currentPage === 1} onClick={() => setCurrentPage(currentPage - 1)}>
@@ -218,7 +238,7 @@ const DataVisualization = () => {
                         Next
                     </button>
                     {/* forward 10 */}
-                    <button style={{margin:0}} disabled={currentPage > totalPages - 11} onClick={() => setCurrentPage(currentPage + 10)}>
+                    <button style={{ margin: 0 }} disabled={currentPage > totalPages - 11} onClick={() => setCurrentPage(currentPage + 10)}>
                         + 10
                     </button>
                 </div>
@@ -247,37 +267,76 @@ const DataVisualization = () => {
                     // default to true if not set
                     var isCollapsed = collapsedItems[tweetId]
                     isCollapsed = isCollapsed === undefined ? true : isCollapsed;
-                    // console.log('isCollapsed', isCollapsed, collapsedItems[tweetId], collapsedItems, tweetId);
-                    const isValidated = tweet.isValidated || false;
+
+
+                    // validatet comes from item in history that has "validated" as "true" default is false (and not set)
+                    const isValidated = history.filter((item) => item.isValidated === true).length > 0;
+                    // const isValidated = tweet.isValidated || false;
 
                     // last Item response from assistant
+                    // see if history has selected item
+                    var selectedItem = history.filter((item) => item.isSelected === true).pop();
+
+                    console.log('selectedItem', selectedItem);
+
                     const lastItem = filter(history, { role: 'assistant' }).pop();
+
+                    if (selectedItem === undefined) {
+                        selectedItem = lastItem;
+                    }
 
                     return (
                         <div className="card" key={tweetId}>
-                            <div className="card-header" onClick={() => handleToggle(tweetId)}>
-                                <div className="validation-checkbox">
-                                    <label>
-                                        <input
-                                            type="checkbox"
-                                            checked={isValidated}
-                                            onChange={() => handleValidation(tweetId)}
-                                        />
-                                        Validated
-                                    </label>
-                                </div>
+                            {/* if validated, then card-header should have greenish backround, set in csv as card-header-validated */}
+
+                            <div className={`card-header${isValidated ? '-validated' : ''}`}
+
+                                onClick={() => handleToggle(tweetId)}>
+
                                 <h2>Tweet ID: {tweetId}</h2>
                                 <h3> {tweetText}</h3>
                             </div>
                             <div className={`card-body ${isCollapsed ? 'collapsed' : ''}`} style={{ display: isCollapsed ? 'none' : 'flex', justifyContent: "center" }}>
                                 {history.map((item, index) => (
-                                    <div className={`item ${isValidated ? 'validated' : ''}`} key={index}>
+                                    // differenciate betwen validated and not validated
+                                    <div className={`item${item.isValidated ?'-validated': ''}`} key={index}>
+
                                         <h3>Role: {item.role}</h3>
                                         {item.role === 'user' && <p>{item.data}</p>}
                                         {item.role === 'assistant' && (
-                                            <div>
-                                                <p>Parsed Output:</p>
-                                                <p>{JSON.stringify(item.parsedOutput, null, 2)}</p>
+
+
+                                            <div style={{
+                                            }}  >
+                                                {item.parsedOutput &&
+                                                    <div className="validation-checkbox" style={{
+                                                        display: 'flex',
+                                                        flexDirection: 'column',
+                                                        justifyContent: 'center',
+                                                    }}>
+                                                        <label>
+                                                            <input
+                                                                type="checkbox"
+                                                                checked={item.isValidated}
+                                                                onChange={() => handleValidation(tweetId, item)}
+                                                            />
+                                                            Validated
+                                                        </label>
+                                                        <label>
+                                                            <input
+                                                                type="checkbox"
+                                                                checked={item.isSelected}
+                                                                onChange={() => handleSelection(tweetId, item)}
+                                                            />
+                                                            Selected For Manual Correction
+                                                        </label>                                                </div>
+
+                                                }
+
+                                                {/* if has item.parsedOutput, show that otherwise, item.text */}
+
+                                                <p> {item.parsedOutput ? 'Parsed Output:' : 'Text:'}  </p>
+                                                <p>{item.parsedOutput ? JSON.stringify(item.parsedOutput, null, 4) : item.text}</p>
                                             </div>
                                         )}
                                     </div>
@@ -291,7 +350,7 @@ const DataVisualization = () => {
                                         style={{ height: '100px' }}
                                         onChange={(e) => (manualInstructionRef[tweetId] = e.target.value)}
                                     />
-                                    <button  onClick={
+                                    <button onClick={
                                         () => {
                                             sendManualInstruction(tweetId)
                                         }
@@ -302,8 +361,23 @@ const DataVisualization = () => {
 
                                     <textarea
                                         type="text"
-                                        defaultValue={JSON.stringify(lastItem.parsedOutput, null, 2)}
-                                        placeholder="Manual Correction"
+                                        defaultValue={JSON.stringify(selectedItem.parsedOutput, null, 2)}
+                                        onChange={(e) => (manualCorrectionValues[tweetId] = e.target.value)}
+                                        ref={
+                                            (el) => {
+                                                manualCorrectionRef[tweetId] = el;
+                                                // if (el) {
+                                                //     el.value = JSON.stringify(selectedItem.parsedOutput, null, 2);
+                                                // }
+                                            }
+
+                                        }
+                                    // value={manualCorrectionRef[tweetId]}
+                                    // we want to dynamically update the value of the textarea to reflect the latest parsedOutput to become the default value
+
+
+                                    // value={JSON.stringify(selectedItem.parsedOutput, null, 2)}
+                                    // placeholder={JSON.stringify(selectedItem, null, 2)}
 
                                     />
                                     <button onClick={sendManualCorrection}>Send Manual Correction</button>
