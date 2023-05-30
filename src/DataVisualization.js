@@ -285,6 +285,13 @@ const DataVisualization = () => {
                         selectedItem = lastItem;
                     }
 
+                    // if tweet has jobs, and the the job is not done, we already have manualInstruction
+                    let alreadyHasManualInstructionItem = tweet.jobs && tweet.jobs.length > 0 && tweet.jobs.filter((item) => item.done === false).length > 0;
+
+                    let manualPlaceholder = alreadyHasManualInstructionItem ? tweet.jobs.filter(item => item.done === false)[0].manualInstruction : '';
+
+                    console.log("jobs", alreadyHasManualInstructionItem, tweet.jobs)
+
                     return (
                         <div className="card" key={tweetId}>
                             {/* if validated, then card-header should have greenish backround, set in csv as card-header-validated */}
@@ -299,7 +306,7 @@ const DataVisualization = () => {
                             <div className={`card-body ${isCollapsed ? 'collapsed' : ''}`} style={{ display: isCollapsed ? 'none' : 'flex', justifyContent: "center" }}>
                                 {history.map((item, index) => (
                                     // differenciate betwen validated and not validated
-                                    <div className={`item${item.isValidated ?'-validated': ''}`} key={index}>
+                                    <div className={`item${item.isValidated ? '-validated' : ''}`} key={index}>
 
                                         <h3>Role: {item.role}</h3>
                                         {item.role === 'user' && <p>{item.data}</p>}
@@ -346,7 +353,8 @@ const DataVisualization = () => {
                                 <div className='buttonGroup'>
                                     <textarea
                                         type="text"
-                                        placeholder="Manual Instruction"
+                                        placeholder={"Manual Instruction"}
+                                        defaultValue={manualPlaceholder}
                                         style={{ height: '100px' }}
                                         onChange={(e) => (manualInstructionRef[tweetId] = e.target.value)}
                                     />
@@ -354,7 +362,7 @@ const DataVisualization = () => {
                                         () => {
                                             sendManualInstruction(tweetId)
                                         }
-                                    }>Send Manual Instruction</button>
+                                    }>{alreadyHasManualInstructionItem ? 'Modify Manual Instruction' : 'Send Manual Instruction'}</button>
                                 </div>
 
                                 <div className='buttonGroup'>
