@@ -202,14 +202,24 @@ const DataVisualization = () => {
                     <p>Current State: {serverStatus.currentState}</p>
                 </div>
             </div>
+            <h1 style={{margin: 10}}> Data Labler</h1>
+            <p style={{margin: 10}} > Total :  {Object.keys(jsonData).length}</p>
             <div>
                 <div className="buttonGroup">
+                    {/* back 10 */}
+                    <button style={{margin:0}} disabled={currentPage < 11} onClick={() => setCurrentPage(currentPage - 10)}>
+                        - 10
+                    </button>
                     <button disabled={currentPage === 1} onClick={() => setCurrentPage(currentPage - 1)}>
                         Previous
                     </button>
                     <span>{currentPage}</span> / <span>{totalPages}</span>
                     <button disabled={currentPage === totalPages} onClick={() => setCurrentPage(currentPage + 1)}>
                         Next
+                    </button>
+                    {/* forward 10 */}
+                    <button style={{margin:0}} disabled={currentPage > totalPages - 11} onClick={() => setCurrentPage(currentPage + 10)}>
+                        + 10
                     </button>
                 </div>
                 {/* <h1>Label Analysis</h1> */}
