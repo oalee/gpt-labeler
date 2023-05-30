@@ -124,9 +124,7 @@ const DataVisualization = () => {
         // let hst = jsonData
         // hst[tweetId].isValidated = value;
 
-        socketRef.current.emit('customMessage', {
-            message: 'validated',
-
+        socketRef.current.emit('validate', {
             tweetId: tweetId,
             historyItem: historyItem,
         });
@@ -277,7 +275,7 @@ const DataVisualization = () => {
                     // see if history has selected item
                     var selectedItem = history.filter((item) => item.isSelected === true).pop();
 
-                    console.log('selectedItem', selectedItem);
+                    // console.log('selectedItem', selectedItem);
 
                     const lastItem = filter(history, { role: 'assistant' }).pop();
 
@@ -290,7 +288,7 @@ const DataVisualization = () => {
 
                     let manualPlaceholder = alreadyHasManualInstructionItem ? tweet.jobs.filter(item => item.done === false)[0].manualInstruction : '';
 
-                    console.log("jobs", alreadyHasManualInstructionItem, tweet.jobs)
+                    // console.log("jobs", alreadyHasManualInstructionItem, tweet.jobs)
 
                     return (
                         <div className="card" key={tweetId}>
@@ -299,6 +297,9 @@ const DataVisualization = () => {
                             <div className={`card-header${isValidated ? '-validated' : ''}`}
 
                                 onClick={() => handleToggle(tweetId)}>
+
+                                    {/* if already has manual instruction, then write this and show a progress indicator */}
+                                    {alreadyHasManualInstructionItem && <div > <h1>Instruction in Queue</h1> <div id="loading"></div></div>}
 
                                 <h2>Tweet ID: {tweetId}</h2>
                                 <h3> {tweetText}</h3>
