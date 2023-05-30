@@ -17,6 +17,11 @@ const DataVisualization = () => {
     const [manualCorrection, setManualCorrection] = useState('');
     const manualInstructionRef = useRef({});
     const manualCorrectionRef = useRef({});
+    const [currentPage, setCurrentPage] = useState(1);
+    const [itemsPerPage] = useState(10); // Set the number of items per page
+    const indexOfLastItem = currentPage * itemsPerPage;
+    const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+    const currentItems = Object.keys(jsonData).slice(indexOfFirstItem, indexOfLastItem);
 
     const [serverStatus, setServerStatus] = useState({
         status: 'disconnected',
@@ -167,7 +172,7 @@ const DataVisualization = () => {
     }, 400);
 
 
-
+    const totalPages = Math.ceil(Object.keys(jsonData).length / itemsPerPage);
     return (
         <div className="container">
             <div className="overlay">
@@ -182,7 +187,16 @@ const DataVisualization = () => {
                 </div>
             </div>
             <div>
-                <h1>Tweet Analysis</h1>
+            <div className="pagination">
+                <button disabled={currentPage === 1} onClick={() => setCurrentPage(currentPage - 1)}>
+                    Previous
+                </button>
+                <span>{currentPage}</span> / <span>{totalPages}</span>
+                <button disabled={currentPage === totalPages} onClick={() => setCurrentPage(currentPage + 1)}>
+                    Next
+                </button>
+            </div>
+                <h1>Label Analysis</h1>
                 <div className="button-group">
                     <button disabled={serverStatus.isTaskRunning} onClick={
                         () => {
@@ -195,7 +209,7 @@ const DataVisualization = () => {
                         }
                     }>Add Sample Queue</button>
                 </div>
-                {Object.keys(jsonData).map((tweetId) => {
+                {currentItems.map((tweetId) => {
                     const tweet = jsonData[tweetId];
                     const history = tweet.history;
                     const tweetText = tweet.item.rawContent;
@@ -266,6 +280,7 @@ const DataVisualization = () => {
                     );
                 })}
             </div>
+        
         </div>
     );
 };
