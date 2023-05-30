@@ -206,6 +206,22 @@ const DataVisualization = () => {
 
 
     const totalPages = Math.ceil(Object.keys(jsonData).length / itemsPerPage);
+
+    // have validated in their history (not null)
+
+    // jsonData is dict
+    // Object.keys(jsonData).length
+    const totalValidated = Object.keys(jsonData).filter((tweetId) => {
+        return jsonData[tweetId].history.filter((historyItem) => historyItem.isValidated === true).length > 0
+    }).length;
+    
+    const totalJobsQueued = Object.keys(jsonData).filter((tweetId) => {
+        return jsonData[tweetId].jobs && jsonData[tweetId].jobs.filter((job) => job.done === false).length > 0
+    }).length;
+    // const totalJobsQueued = jsonData.filter((item) => {
+    //    return item.jobs && item.jobs.filter((job) => job.done === false).length > 0
+    // }).length; 
+
     return (
         <div className="container">
             <div className="overlay">
@@ -222,6 +238,8 @@ const DataVisualization = () => {
             </div>
             <h1 style={{ margin: 10 }}> Data Labler</h1>
             <p style={{ margin: 10 }} > Total :  {Object.keys(jsonData).length}</p>
+            <p style={{ margin: 10 }} > Total Validated :  {totalValidated}</p>
+            <p style={{ margin: 10 }} > Total Instruction Queued :  {totalJobsQueued}</p>
             <div>
                 <div className="buttonGroup">
                     {/* back 10 */}
@@ -298,8 +316,8 @@ const DataVisualization = () => {
 
                                 onClick={() => handleToggle(tweetId)}>
 
-                                    {/* if already has manual instruction, then write this and show a progress indicator */}
-                                    {alreadyHasManualInstructionItem && <div > <h1>Instruction in Queue</h1> <div id="loading"></div></div>}
+                                {/* if already has manual instruction, then write this and show a progress indicator */}
+                                {alreadyHasManualInstructionItem && <div > <h1>Instruction in Queue</h1> <div id="loading"></div></div>}
 
                                 <h2>Tweet ID: {tweetId}</h2>
                                 <h3> {tweetText}</h3>
