@@ -180,7 +180,30 @@ const DataVisualization = () => {
 
 
 
-    const sendManualCorrection = () => {
+    const sendManualCorrection = (tweetId) => {
+
+        let value = manualCorrectionRef[tweetId].value;
+        // first check if it's valid json
+
+        try {
+            let json = JSON.parse(value);
+
+            // if it's valid json, then send it to the server
+            let msg = {
+                tweetId: tweetId,
+                manualCorrection: json,
+            }
+
+            console.log('sendManualCorrection', msg);
+
+            socketRef.current.emit('sendManualCorrection', {
+                ...msg
+            });
+        }
+        catch (e) {
+            alert('Invalid JSON');
+            return;
+        }
         // Send manual correction logic
     };
 
@@ -214,7 +237,7 @@ const DataVisualization = () => {
     const totalValidated = Object.keys(jsonData).filter((tweetId) => {
         return jsonData[tweetId].history.filter((historyItem) => historyItem.isValidated === true).length > 0
     }).length;
-    
+
     const totalJobsQueued = Object.keys(jsonData).filter((tweetId) => {
         return jsonData[tweetId].jobs && jsonData[tweetId].jobs.filter((job) => job.done === false).length > 0
     }).length;
@@ -243,7 +266,7 @@ const DataVisualization = () => {
             <div>
                 <div className="buttonGroup">
                     {/* back 10 */}
-                    <button style={{ margin: 0 }} disabled={currentPage < 11} onClick={() => setCurrentPage(currentPage - 10)}>
+                    <button style={{ margin: 0 }} disabled={currentPage < 10} onClick={() => setCurrentPage(currentPage - 10)}>
                         - 10
                     </button>
                     <button disabled={currentPage === 1} onClick={() => setCurrentPage(currentPage - 1)}>
@@ -327,8 +350,45 @@ const DataVisualization = () => {
                                     // differenciate betwen validated and not validated
                                     <div className={`item${item.isValidated ? '-validated' : ''}`} key={index}>
 
-                                        <h3>Role: {item.role}</h3>
-                                        {item.role === 'user' && <p>{item.data}</p>}
+                                        <h3>Role: {item.role ? item.role : item.type}</h3>
+                                        {item.type === 'user' && <p>{item.data ? item.data : item.text}</p>}
+                                        {item.role === 'user' && <p>{item.data ? item.data : item.text}</p>}
+                                        {item.type === 'manualCorrection' &&
+                                            (
+                                                <div style={{
+                                                }}  >
+                                                    {item.parsedOutput &&
+                                                        <div className="validation-checkbox" style={{
+                                                            display: 'flex',
+                                                            flexDirection: 'column',
+                                                            justifyContent: 'center',
+                                                        }}>
+                                                            <label>
+                                                                <input
+                                                                    type="checkbox"
+                                                                    checked={item.isValidated}
+                                                                    onChange={() => handleValidation(tweetId, item)}
+                                                                />
+                                                                Validated
+                                                            </label>
+                                                            <label>
+                                                                <input
+                                                                    type="checkbox"
+                                                                    checked={item.isSelected}
+                                                                    onChange={() => handleSelection(tweetId, item)}
+                                                                />
+                                                                Selected For Manual Correction
+                                                            </label>                                                </div>
+
+                                                    }
+
+                                                    {/* if has item.parsedOutput, show that otherwise, item.text */}
+
+                                                    <p> {item.parsedOutput ? 'Parsed Output:' : 'Text:'}  </p>
+                                                    <p>{item.parsedOutput ? JSON.stringify(item.parsedOutput, null, 4) : item.text}</p>
+                                                </div>
+                                            )
+                                        }
                                         {item.role === 'assistant' && (
 
 
@@ -407,7 +467,9 @@ const DataVisualization = () => {
                                     // placeholder={JSON.stringify(selectedItem, null, 2)}
 
                                     />
-                                    <button onClick={sendManualCorrection}>Send Manual Correction</button>
+                                    <button onClick={(e) => {
+                                        sendManualCorrection(tweetId)
+                                    }}>Send Manual Correction</button>
                                 </div>
                             </div>
 
@@ -415,7 +477,23 @@ const DataVisualization = () => {
                     );
                 })}
             </div>
-
+            <div className="buttonGroup">
+                {/* back 10 */}
+                <button style={{ margin: 0 }} disabled={currentPage < 10} onClick={() => setCurrentPage(currentPage - 10)}>
+                    - 10
+                </button>
+                <button disabled={currentPage === 1} onClick={() => setCurrentPage(currentPage - 1)}>
+                    Previous
+                </button>
+                <span>{currentPage}</span> / <span>{totalPages}</span>
+                <button disabled={currentPage === totalPages} onClick={() => setCurrentPage(currentPage + 1)}>
+                    Next
+                </button>
+                {/* forward 10 */}
+                <button style={{ margin: 0 }} disabled={currentPage > totalPages - 10} onClick={() => setCurrentPage(currentPage + 10)}>
+                    + 10
+                </button>
+            </div>
         </div>
     );
 };
