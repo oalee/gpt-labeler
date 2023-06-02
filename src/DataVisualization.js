@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import socketIOClient from 'socket.io-client';
 import './DataVisualization.css'; // Import the CSS file
 import socket from './socket';
@@ -21,8 +21,36 @@ const DataVisualization = () => {
     const [itemsPerPage] = useState(10); // Set the number of items per page
     const indexOfLastItem = currentPage * itemsPerPage;
     const indexOfFirstItem = indexOfLastItem - itemsPerPage;
-    const currentItems = Object.keys(jsonData).slice(indexOfFirstItem, indexOfLastItem);
     const [addedSampleQueue, setAddedSampleQueue] = useState(false);
+    const [filterType, setFilterType] = useState('all');
+    // filter all means all data, we have all, validated, and unvalidated
+    // filter validated means only show validated data
+
+    // we need to filter jsonData
+    const handleFilterChange = (event) => {
+        setFilterType(event.target.value);
+    };
+
+    // Apply the filter based on filterType
+    const filteredItems = useMemo(() => {
+        return Object.fromEntries(
+            Object.entries(jsonData).filter(([tweetId, item]) => {
+                if (filterType === 'all') {
+                    return true;
+                } else if (filterType === 'validated') {
+                    return item.history.some((historyItem) => historyItem.isValidated === true);
+                } else if (filterType === 'unvalidated') {
+                    return !item.history.some((historyItem) => historyItem.isValidated === true);
+                }
+                return true;
+            })
+        );
+    }, [jsonData, filterType]);
+    // const currentItems = Object.keys(jsonData).slice(indexOfFirstItem, indexOfLastItem);
+    const totalPages = Math.ceil(Object.keys(filteredItems).length / itemsPerPage);
+
+    const currentItems = Object.keys(filteredItems)
+        .slice(indexOfFirstItem, indexOfLastItem);
 
     const [serverStatus, setServerStatus] = useState({
         status: 'disconnected',
@@ -78,28 +106,6 @@ const DataVisualization = () => {
         }
     }, []);
 
-
-    const startTask = () => {
-        socketRef.current.emit('startTask');
-    };
-
-    const stopTask = () => {
-        socketRef.current.emit('stopTask');
-    };
-
-    const sendCustomMessage = (message) => {
-        socketRef.current.emit('customMessage', message);
-    };
-    // State to track the collapsed state of user data
-
-
-    // useEffect(() => {
-    //     const initialCollapsedItems = collapsedItems;
-    //     Object.keys(jsonData).forEach((tweetId) => {
-    //         initialCollapsedItems[tweetId] = initialCollapsedItems[tweetId] | true;
-    //     });
-    //     setCollapsedItems(initialCollapsedItems);
-    // }, [jsonData]);
 
 
 
@@ -223,12 +229,7 @@ const DataVisualization = () => {
 
     };
 
-    const handleChange = debounce((value) => {
-        setManualInstruction(value);
-    }, 400);
 
-
-    const totalPages = Math.ceil(Object.keys(jsonData).length / itemsPerPage);
 
     // have validated in their history (not null)
 
@@ -263,8 +264,20 @@ const DataVisualization = () => {
             <p style={{ margin: 10 }} > Total :  {Object.keys(jsonData).length}</p>
             <p style={{ margin: 10 }} > Total Validated :  {totalValidated}</p>
             <p style={{ margin: 10 }} > Total Instruction Queued :  {totalJobsQueued}</p>
+
+            <div className="filter-container">
+                <label htmlFor="filter">Filter:</label>
+                <select id="filter"style={{margin:10, fontSize:20}} value={filterType} onChange={handleFilterChange}>
+                    <option value="all">All</option>
+                    <option value="validated">Validated</option>
+                    <option value="unvalidated">Unvalidated</option>
+                </select>
+            </div>
             <div>
                 <div className="buttonGroup">
+                <button style={{ margin: 5 }} disabled={currentPage  == 1} onClick={() => setCurrentPage(1)}>
+                        First
+                    </button>
                     {/* back 10 */}
                     <button style={{ margin: 0 }} disabled={currentPage < 10} onClick={() => setCurrentPage(currentPage - 10)}>
                         - 10
@@ -279,6 +292,9 @@ const DataVisualization = () => {
                     {/* forward 10 */}
                     <button style={{ margin: 0 }} disabled={currentPage > totalPages - 11} onClick={() => setCurrentPage(currentPage + 10)}>
                         + 10
+                    </button>
+                    <button style={{ margin: 5 }} disabled={currentPage == totalPages } onClick={() => setCurrentPage(totalPages)}>
+                        Last
                     </button>
                 </div>
                 {/* <h1>Label Analysis</h1> */}
