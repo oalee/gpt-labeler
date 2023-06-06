@@ -161,8 +161,12 @@ const DataVisualization = () => {
         setJsonData({ ...jsonData });
     };
 
+    // useMemo(() =>
 
-    const handleToggle = (tweetId) => {
+    // chage to useMemo
+
+
+    const handleToggleInternal = (tweetId) => {
         console.log('tweetId', tweetId);
 
 
@@ -182,9 +186,30 @@ const DataVisualization = () => {
 
     };
 
+    const handleToggle = useMemo(
+        () => (tweetId) => {
+            handleToggleInternal(tweetId);
+        }, [collapsedItems, jsonData]
+    )
 
-
-
+    useEffect(() => {
+        window.addEventListener('error', e => { 
+          if (e.message === 'ResizeObserver loop limit exceeded' || e.message === 'Script error.') {
+            const resizeObserverErrDiv = document.getElementById(
+              'webpack-dev-server-client-overlay-div'
+            )
+            const resizeObserverErr = document.getElementById(
+              'webpack-dev-server-client-overlay'
+            )
+            if (resizeObserverErr) {
+              resizeObserverErr.setAttribute('style', 'display: none');
+            }
+            if (resizeObserverErrDiv) {
+              resizeObserverErrDiv.setAttribute('style', 'display: none');
+            }
+          }
+        })
+      }, [])
 
     const sendManualCorrection = (tweetId) => {
 
@@ -256,7 +281,9 @@ const DataVisualization = () => {
                     <p>Prompt Queue Length: {serverStatus.promptQueueLength}</p>
                     <p>Rate Limit Error: {serverStatus.rateLimitError.toString()}</p>
                     <p>Error: {JSON.stringify(serverStatus.error)}</p>
-                    <p>Rate Limit Time: {serverStatus.rateLimitTime}</p>
+                    {/* <p>Rate Limit Time: {serverStatus.rateLimitTime}</p> */}
+                    {/* if rateLimitTime != null and not zero, substract from now to get ETA */}
+                    <p>ETA: {serverStatus.rateLimitTime ? new Date(serverStatus.rateLimitTime - Date.now()).toISOString().substr(11, 8) : null}</p>
                     <p>Current State: {serverStatus.currentState}</p>
                 </div>
             </div>
@@ -267,7 +294,7 @@ const DataVisualization = () => {
 
             <div className="filter-container">
                 <label htmlFor="filter">Filter:</label>
-                <select id="filter"style={{margin:10, fontSize:20}} value={filterType} onChange={handleFilterChange}>
+                <select id="filter" style={{ margin: 10, fontSize: 20 }} value={filterType} onChange={handleFilterChange}>
                     <option value="all">All</option>
                     <option value="validated">Validated</option>
                     <option value="unvalidated">Unvalidated</option>
@@ -275,7 +302,7 @@ const DataVisualization = () => {
             </div>
             <div>
                 <div className="buttonGroup">
-                <button style={{ margin: 5 }} disabled={currentPage  == 1} onClick={() => setCurrentPage(1)}>
+                    <button style={{ margin: 5 }} disabled={currentPage == 1} onClick={() => setCurrentPage(1)}>
                         First
                     </button>
                     {/* back 10 */}
@@ -293,7 +320,7 @@ const DataVisualization = () => {
                     <button style={{ margin: 0 }} disabled={currentPage > totalPages - 11} onClick={() => setCurrentPage(currentPage + 10)}>
                         + 10
                     </button>
-                    <button style={{ margin: 5 }} disabled={currentPage == totalPages } onClick={() => setCurrentPage(totalPages)}>
+                    <button style={{ margin: 5 }} disabled={currentPage == totalPages} onClick={() => setCurrentPage(totalPages)}>
                         Last
                     </button>
                 </div>
@@ -361,7 +388,10 @@ const DataVisualization = () => {
                                 <h2>Tweet ID: {tweetId}</h2>
                                 <h3> {tweetText}</h3>
                             </div>
-                            <div className={`card-body ${isCollapsed ? 'collapsed' : ''}`} style={{ display: isCollapsed ? 'none' : 'flex', justifyContent: "center" }}>
+                            <div className={`card-body ${isCollapsed ? 'collapsed' : ''}`} style={{ display: isCollapsed ? 'none' : 'flex', justifyContent: "center" }}
+                                
+                                >
+
                                 {history.map((item, index) => (
                                     // differenciate betwen validated and not validated
                                     <div className={`item${item.isValidated ? '-validated' : ''}`} key={index}>
@@ -441,16 +471,20 @@ const DataVisualization = () => {
                                                 <p>{item.parsedOutput ? JSON.stringify(item.parsedOutput, null, 4) : item.text}</p>
                                             </div>
                                         )}
+                                                
+
                                     </div>
                                 ))}
                                 {/* <button onClick={handleResendInstruction}>Resend Instruction</button> */}
+                                
+                                <h4> {tweetText} </h4>
 
                                 <div className='buttonGroup'>
                                     <textarea
                                         type="text"
                                         placeholder={"Manual Instruction"}
                                         defaultValue={manualPlaceholder}
-                                        style={{ height: '100px' }}
+                                        style={{ height: '300px' }}
                                         onChange={(e) => (manualInstructionRef[tweetId] = e.target.value)}
                                     />
                                     <button onClick={
